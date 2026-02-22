@@ -42,7 +42,7 @@ async fn main() {
         .with_state(app_state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    info!("⚡ Distributed Signaling Server running on 0.0.0.0:3000");
+    info!("⚡ OneShare Signaling Server running on 0.0.0.0:3000");
 
     axum::serve(listener, app).await.unwrap();
 }
@@ -70,7 +70,7 @@ fn spawn_redis_router(state: Arc<AppState>) {
             if let Some(bytes) = msg.value.as_bytes() {
                 if let Ok(payload) = rmp_serde::from_slice::<RedisPayload>(bytes) {
                     match payload {
-                        RedisPayload::PeerJoined { room_id, peer_id } => {
+                        RedisPayload::PeerJoined { room_id, peer_id, device_name, device_type } => {
                             if let Some(local_peers) = state.local_rooms.get(&room_id) {
                                 for local_peer_id in local_peers.iter() {
                                     if *local_peer_id != peer_id {
@@ -79,6 +79,8 @@ fn spawn_redis_router(state: Arc<AppState>) {
                                                 &tx,
                                                 WsMessage::PeerJoined {
                                                     peer_id: peer_id.clone(),
+                                                    device_name: device_name.clone(),
+                                                    device_type: device_type.clone(),
                                                 },
                                             );
                                         }
