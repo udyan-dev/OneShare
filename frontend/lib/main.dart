@@ -1,7 +1,22 @@
+import 'dart:async';
+import 'dart:developer' as dev;
+
 import 'package:flutter/material.dart';
 
+import 'core/di.dart' as di;
+import 'src/test.dart';
+
 void main() {
-  runApp(const MainApp());
+  runZonedGuarded(
+    () {
+      WidgetsFlutterBinding.ensureInitialized();
+      di.inject();
+      runApp(const MainApp());
+    },
+    (error, stackTrace) {
+      dev.log('$error\n$stackTrace');
+    },
+  );
 }
 
 class MainApp extends StatelessWidget {
@@ -9,12 +24,6 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
-    );
+    return const MaterialApp(home: SignalingTestPage());
   }
 }
