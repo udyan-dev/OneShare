@@ -1,5 +1,5 @@
 use crate::models::{RedisPayload, RoomMetadata, WsMessage};
-use crate::state::AppState;
+use crate::state::{AppState, WsSender};
 use axum::extract::ws::{Message, WebSocket};
 use bytes::Bytes;
 use dashmap::DashSet;
@@ -10,9 +10,9 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 
 pub async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
-    let client_id = Arc::new(nanoid!(8));
+    let client_id: Arc<str> = Arc::from(nanoid!(8).into_boxed_str());
     let (mut ws_sender, mut ws_receiver) = socket.split();
-    let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
+    let (tx, mut rx) = mpsc::channel::<Message>(256);
 
     state.local_clients.insert(client_id.to_string(), tx.clone());
 
@@ -29,17 +29,12 @@ pub async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
 
     let mut recv_task = tokio::spawn(async move {
         while let Some(Ok(msg)) = ws_receiver.next().await {
-            match msg {
-                Message::Binary(bin) => {
-                    if !bin.is_empty() {
-                        if let Ok(ws_msg) = rmp_serde::from_slice::<WsMessage>(&bin) {
-                            process_client_message(ws_msg, &state_clone, &client_id_clone, &tx).await;
-                        }
+            if let Message::Binary(bin) = msg {
+                if !bin.is_empty() {
+                    if let Ok(ws_msg) = rmp_serde::from_slice::<WsMessage>(&bin) {
+                        process_client_message(ws_msg, &state_clone, &client_id_clone, &tx).await;
                     }
                 }
-                Message::Ping(_) | Message::Pong(_) => {}
-                Message::Close(_) => break,
-                _ => {}
             }
         }
     });
@@ -56,7 +51,7 @@ async fn process_client_message(
     msg: WsMessage,
     state: &Arc<AppState>,
     client_id: &str,
-    tx: &mpsc::UnboundedSender<Message>,
+    tx: &WsSender,
 ) {
     match msg {
         WsMessage::CreateRoom { device_name, device_type, total_files, total_size } => {
@@ -72,13 +67,11 @@ async fn process_client_message(
             };
 
             if let Ok(meta_bin) = rmp_serde::to_vec(&metadata) {
-                let bytes = Bytes::from(meta_bin);
-                if state.redis.set::<(), _, _>(&room_key, bytes, Some(Expiration::EX(900)), None, false).await.is_ok() {
+                if state.redis.set::<(), _, _>(&room_key, Bytes::from(meta_bin), Some(Expiration::EX(900)), None, false).await.is_ok() {
                     let _ = state.redis_subscriber.subscribe(&room_key).await;
                     state.local_rooms.entry(share_id.clone()).or_insert_with(DashSet::new).insert(client_id.to_string());
                     state.client_to_room.insert(client_id.to_string(), share_id.clone());
-
-                    send_ws(tx, WsMessage::RoomCreated { share_id, client_id: client_id.to_string() });
+                    send_ws(tx, &WsMessage::RoomCreated { share_id, client_id: client_id.to_string() });
                 }
             }
         }
@@ -91,7 +84,7 @@ async fn process_client_message(
                     state.local_rooms.entry(share_id.clone()).or_insert_with(DashSet::new).insert(client_id.to_string());
                     state.client_to_room.insert(client_id.to_string(), share_id.clone());
 
-                    send_ws(tx, WsMessage::RoomInfo {
+                    send_ws(tx, &WsMessage::RoomInfo {
                         owner_id: metadata.owner_id,
                         device_name: metadata.device_name,
                         device_type: metadata.device_type,
@@ -110,12 +103,10 @@ async fn process_client_message(
                     return;
                 }
             }
-            send_ws(tx, WsMessage::Error { message: "Room Error".into() });
+            send_ws(tx, &WsMessage::Error { message: "Room Error".into() });
         }
         WsMessage::ExchangeEndpoints { target_id, endpoints, cert_hash } => {
-            let share_id = state.client_to_room.get(client_id).map(|r| r.value().clone());
-
-            if let Some(share_id) = share_id {
+            if let Some(share_id) = state.client_to_room.get(client_id).map(|r| r.value().clone()) {
                 let room_key = format!("room:{}", share_id);
                 if let Ok(bin) = rmp_serde::to_vec(&RedisPayload::EndpointsExchanged {
                     room_id: share_id,
@@ -129,11 +120,8 @@ async fn process_client_message(
             }
         }
         WsMessage::RoomClosed => {
-            let share_id = state.client_to_room.get(client_id).map(|r| r.value().clone());
-
-            if let Some(share_id) = share_id {
+            if let Some(share_id) = state.client_to_room.get(client_id).map(|r| r.value().clone()) {
                 let room_key = format!("room:{}", share_id);
-
                 if let Ok(meta_bytes) = state.redis.get::<Bytes, _>(&room_key).await {
                     if let Ok(metadata) = rmp_serde::from_slice::<RoomMetadata>(&meta_bytes) {
                         if metadata.owner_id == client_id {
@@ -167,8 +155,8 @@ async fn cleanup_client(state: &Arc<AppState>, client_id: &str) {
     }
 }
 
-pub fn send_ws(tx: &mpsc::UnboundedSender<Message>, msg: WsMessage) {
-    if let Ok(bin) = rmp_serde::to_vec(&msg) {
-        let _ = tx.send(Message::Binary(Bytes::from(bin)));
+pub fn send_ws(tx: &WsSender, msg: &WsMessage) {
+    if let Ok(bin) = rmp_serde::to_vec(msg) {
+        let _ = tx.try_send(Message::Binary(Bytes::from(bin)));
     }
 }
