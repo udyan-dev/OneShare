@@ -8,11 +8,20 @@ use futures_util::{sink::SinkExt, stream::StreamExt};
 use nanoid::nanoid;
 use std::sync::Arc;
 use tokio::sync::mpsc;
+use tokio::time::{timeout, Duration};
 
-pub async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
+#[inline(always)]
+fn generate_room_key(share_id: &str) -> String {
+    let mut key = String::with_capacity(12);
+    key.push_str("room:");
+    key.push_str(share_id);
+    key
+}
+
+pub async fn handle_socket(socket: WebSocket, state: Arc<AppState>, public_endpoint: String) {
     let client_id: Arc<str> = Arc::from(nanoid!(8).into_boxed_str());
     let (mut ws_sender, mut ws_receiver) = socket.split();
-    let (tx, mut rx) = mpsc::channel::<Message>(256);
+    let (tx, mut rx) = mpsc::channel::<Message>(512);
 
     state.local_clients.insert(client_id.to_string(), tx.clone());
 
@@ -28,13 +37,25 @@ pub async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
     let client_id_clone = client_id.clone();
 
     let mut recv_task = tokio::spawn(async move {
-        while let Some(Ok(msg)) = ws_receiver.next().await {
-            if let Message::Binary(bin) = msg {
-                if !bin.is_empty() {
-                    if let Ok(ws_msg) = rmp_serde::from_slice::<WsMessage>(&bin) {
-                        process_client_message(ws_msg, &state_clone, &client_id_clone, &tx).await;
+        while let Ok(Some(Ok(msg))) = timeout(Duration::from_secs(60), ws_receiver.next()).await {
+            match msg {
+                Message::Binary(bin) => {
+                    if !bin.is_empty() {
+                        if let Ok(ws_msg) = rmp_serde::from_slice::<WsMessage>(&bin) {
+                            process_client_message(
+                                ws_msg,
+                                &state_clone,
+                                &client_id_clone,
+                                &tx,
+                                &public_endpoint,
+                            )
+                                .await;
+                        }
                     }
                 }
+                Message::Ping(_) | Message::Pong(_) => {}
+                Message::Close(_) => break,
+                _ => {}
             }
         }
     });
@@ -52,11 +73,12 @@ async fn process_client_message(
     state: &Arc<AppState>,
     client_id: &str,
     tx: &WsSender,
+    public_endpoint: &str,
 ) {
     match msg {
         WsMessage::CreateRoom { device_name, device_type, total_files, total_size } => {
-            let share_id = nanoid!(6);
-            let room_key = format!("room:{}", share_id);
+            let share_id = nanoid!(7, &['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+            let room_key = generate_room_key(&share_id);
 
             let metadata = RoomMetadata {
                 owner_id: client_id.to_string(),
@@ -72,11 +94,12 @@ async fn process_client_message(
                     state.local_rooms.entry(share_id.clone()).or_insert_with(DashSet::new).insert(client_id.to_string());
                     state.client_to_room.insert(client_id.to_string(), share_id.clone());
                     send_ws(tx, &WsMessage::RoomCreated { share_id, client_id: client_id.to_string() });
+                    send_ws(tx, &WsMessage::Error { message: format!("REFLECT:{}", public_endpoint) });
                 }
             }
         }
         WsMessage::JoinRoom { share_id, device_name, device_type } => {
-            let room_key = format!("room:{}", share_id);
+            let room_key = generate_room_key(&share_id);
 
             if let Ok(meta_bytes) = state.redis.get::<Bytes, _>(&room_key).await {
                 if let Ok(metadata) = rmp_serde::from_slice::<RoomMetadata>(&meta_bytes) {
@@ -91,6 +114,7 @@ async fn process_client_message(
                         total_files: metadata.total_files,
                         total_size: metadata.total_size,
                     });
+                    send_ws(tx, &WsMessage::Error { message: format!("REFLECT:{}", public_endpoint) });
 
                     if let Ok(bin) = rmp_serde::to_vec(&RedisPayload::PeerJoined {
                         room_id: share_id.clone(),
@@ -103,11 +127,11 @@ async fn process_client_message(
                     return;
                 }
             }
-            send_ws(tx, &WsMessage::Error { message: "Room Error".into() });
+            send_ws(tx, &WsMessage::Error { message: "".into() });
         }
         WsMessage::ExchangeEndpoints { target_id, endpoints, cert_hash } => {
             if let Some(share_id) = state.client_to_room.get(client_id).map(|r| r.value().clone()) {
-                let room_key = format!("room:{}", share_id);
+                let room_key = generate_room_key(&share_id);
                 if let Ok(bin) = rmp_serde::to_vec(&RedisPayload::EndpointsExchanged {
                     room_id: share_id,
                     sender_id: client_id.to_string(),
@@ -121,7 +145,7 @@ async fn process_client_message(
         }
         WsMessage::RoomClosed => {
             if let Some(share_id) = state.client_to_room.get(client_id).map(|r| r.value().clone()) {
-                let room_key = format!("room:{}", share_id);
+                let room_key = generate_room_key(&share_id);
                 if let Ok(meta_bytes) = state.redis.get::<Bytes, _>(&room_key).await {
                     if let Ok(metadata) = rmp_serde::from_slice::<RoomMetadata>(&meta_bytes) {
                         if metadata.owner_id == client_id {
@@ -150,7 +174,8 @@ async fn cleanup_client(state: &Arc<AppState>, client_id: &str) {
         }
         if is_empty {
             state.local_rooms.remove_if(&share_id, |_, peers| peers.is_empty());
-            let _ = state.redis_subscriber.unsubscribe(format!("room:{}", share_id)).await;
+            let room_key = generate_room_key(&share_id);
+            let _ = state.redis_subscriber.unsubscribe(room_key).await;
         }
     }
 }

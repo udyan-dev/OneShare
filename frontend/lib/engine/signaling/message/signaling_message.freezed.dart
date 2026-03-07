@@ -11,65 +11,11 @@ part of 'signaling_message.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
-SignalingMessage _$SignalingMessageFromJson(
-  Map<String, dynamic> json
-) {
-        switch (json['type']) {
-                  case 'CreateRoom':
-          return _CreateRoom.fromJson(
-            json
-          );
-                case 'JoinRoom':
-          return _JoinRoom.fromJson(
-            json
-          );
-                case 'RoomCreated':
-          return _RoomCreated.fromJson(
-            json
-          );
-                case 'RoomInfo':
-          return _RoomInfo.fromJson(
-            json
-          );
-                case 'PeerJoined':
-          return _PeerJoined.fromJson(
-            json
-          );
-                case 'ExchangeEndpoints':
-          return _ExchangeEndpoints.fromJson(
-            json
-          );
-                case 'EndpointsReceived':
-          return _EndpointsReceived.fromJson(
-            json
-          );
-                case 'RoomClosed':
-          return _RoomClosed.fromJson(
-            json
-          );
-                case 'Error':
-          return _Error.fromJson(
-            json
-          );
-        
-          default:
-            throw CheckedFromJsonException(
-  json,
-  'type',
-  'SignalingMessage',
-  'Invalid union type "${json['type']}"!'
-);
-        }
-      
-}
-
 /// @nodoc
 mixin _$SignalingMessage {
 
 
 
-  /// Serializes this SignalingMessage to a JSON map.
-  Map<String, dynamic> toJson();
 
 
 @override
@@ -77,7 +23,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is SignalingMessage);
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => runtimeType.hashCode;
 
@@ -274,20 +220,16 @@ return error(_that.message);case _:
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _CreateRoom implements SignalingMessage {
-  const _CreateRoom({required this.deviceName, required this.deviceType, required this.totalFiles, required this.totalSize, final  String? $type}): $type = $type ?? 'CreateRoom';
-  factory _CreateRoom.fromJson(Map<String, dynamic> json) => _$CreateRoomFromJson(json);
+  const _CreateRoom({required this.deviceName, required this.deviceType, required this.totalFiles, required this.totalSize});
+  
 
  final  String deviceName;
  final  String deviceType;
  final  int totalFiles;
  final  int totalSize;
-
-@JsonKey(name: 'type')
-final String $type;
-
 
 /// Create a copy of SignalingMessage
 /// with the given fields replaced by the non-null parameter values.
@@ -295,17 +237,14 @@ final String $type;
 @pragma('vm:prefer-inline')
 _$CreateRoomCopyWith<_CreateRoom> get copyWith => __$CreateRoomCopyWithImpl<_CreateRoom>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$CreateRoomToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreateRoom&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceType, deviceType) || other.deviceType == deviceType)&&(identical(other.totalFiles, totalFiles) || other.totalFiles == totalFiles)&&(identical(other.totalSize, totalSize) || other.totalSize == totalSize));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,deviceName,deviceType,totalFiles,totalSize);
 
@@ -353,19 +292,15 @@ as int,
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _JoinRoom implements SignalingMessage {
-  const _JoinRoom({required this.shareId, required this.deviceName, required this.deviceType, final  String? $type}): $type = $type ?? 'JoinRoom';
-  factory _JoinRoom.fromJson(Map<String, dynamic> json) => _$JoinRoomFromJson(json);
+  const _JoinRoom({required this.shareId, required this.deviceName, required this.deviceType});
+  
 
  final  String shareId;
  final  String deviceName;
  final  String deviceType;
-
-@JsonKey(name: 'type')
-final String $type;
-
 
 /// Create a copy of SignalingMessage
 /// with the given fields replaced by the non-null parameter values.
@@ -373,17 +308,14 @@ final String $type;
 @pragma('vm:prefer-inline')
 _$JoinRoomCopyWith<_JoinRoom> get copyWith => __$JoinRoomCopyWithImpl<_JoinRoom>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$JoinRoomToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _JoinRoom&&(identical(other.shareId, shareId) || other.shareId == shareId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceType, deviceType) || other.deviceType == deviceType));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,shareId,deviceName,deviceType);
 
@@ -430,18 +362,14 @@ as String,
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _RoomCreated implements SignalingMessage {
-  const _RoomCreated({required this.shareId, required this.clientId, final  String? $type}): $type = $type ?? 'RoomCreated';
-  factory _RoomCreated.fromJson(Map<String, dynamic> json) => _$RoomCreatedFromJson(json);
+  const _RoomCreated({required this.shareId, required this.clientId});
+  
 
  final  String shareId;
  final  String clientId;
-
-@JsonKey(name: 'type')
-final String $type;
-
 
 /// Create a copy of SignalingMessage
 /// with the given fields replaced by the non-null parameter values.
@@ -449,17 +377,14 @@ final String $type;
 @pragma('vm:prefer-inline')
 _$RoomCreatedCopyWith<_RoomCreated> get copyWith => __$RoomCreatedCopyWithImpl<_RoomCreated>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$RoomCreatedToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _RoomCreated&&(identical(other.shareId, shareId) || other.shareId == shareId)&&(identical(other.clientId, clientId) || other.clientId == clientId));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,shareId,clientId);
 
@@ -505,11 +430,11 @@ as String,
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _RoomInfo implements SignalingMessage {
-  const _RoomInfo({required this.ownerId, required this.deviceName, required this.deviceType, required this.totalFiles, required this.totalSize, final  String? $type}): $type = $type ?? 'RoomInfo';
-  factory _RoomInfo.fromJson(Map<String, dynamic> json) => _$RoomInfoFromJson(json);
+  const _RoomInfo({required this.ownerId, required this.deviceName, required this.deviceType, required this.totalFiles, required this.totalSize});
+  
 
  final  String ownerId;
  final  String deviceName;
@@ -517,27 +442,20 @@ class _RoomInfo implements SignalingMessage {
  final  int totalFiles;
  final  int totalSize;
 
-@JsonKey(name: 'type')
-final String $type;
-
-
 /// Create a copy of SignalingMessage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 _$RoomInfoCopyWith<_RoomInfo> get copyWith => __$RoomInfoCopyWithImpl<_RoomInfo>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$RoomInfoToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _RoomInfo&&(identical(other.ownerId, ownerId) || other.ownerId == ownerId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceType, deviceType) || other.deviceType == deviceType)&&(identical(other.totalFiles, totalFiles) || other.totalFiles == totalFiles)&&(identical(other.totalSize, totalSize) || other.totalSize == totalSize));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,ownerId,deviceName,deviceType,totalFiles,totalSize);
 
@@ -586,19 +504,15 @@ as int,
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _PeerJoined implements SignalingMessage {
-  const _PeerJoined({required this.peerId, required this.deviceName, required this.deviceType, final  String? $type}): $type = $type ?? 'PeerJoined';
-  factory _PeerJoined.fromJson(Map<String, dynamic> json) => _$PeerJoinedFromJson(json);
+  const _PeerJoined({required this.peerId, required this.deviceName, required this.deviceType});
+  
 
  final  String peerId;
  final  String deviceName;
  final  String deviceType;
-
-@JsonKey(name: 'type')
-final String $type;
-
 
 /// Create a copy of SignalingMessage
 /// with the given fields replaced by the non-null parameter values.
@@ -606,17 +520,14 @@ final String $type;
 @pragma('vm:prefer-inline')
 _$PeerJoinedCopyWith<_PeerJoined> get copyWith => __$PeerJoinedCopyWithImpl<_PeerJoined>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$PeerJoinedToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _PeerJoined&&(identical(other.peerId, peerId) || other.peerId == peerId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceType, deviceType) || other.deviceType == deviceType));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,peerId,deviceName,deviceType);
 
@@ -663,11 +574,11 @@ as String,
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _ExchangeEndpoints implements SignalingMessage {
-  const _ExchangeEndpoints({required this.targetId, required final  List<String> endpoints, required this.certHash, final  String? $type}): _endpoints = endpoints,$type = $type ?? 'ExchangeEndpoints';
-  factory _ExchangeEndpoints.fromJson(Map<String, dynamic> json) => _$ExchangeEndpointsFromJson(json);
+  const _ExchangeEndpoints({required this.targetId, required final  List<String> endpoints, required this.certHash}): _endpoints = endpoints;
+  
 
  final  String targetId;
  final  List<String> _endpoints;
@@ -679,27 +590,20 @@ class _ExchangeEndpoints implements SignalingMessage {
 
  final  String certHash;
 
-@JsonKey(name: 'type')
-final String $type;
-
-
 /// Create a copy of SignalingMessage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 _$ExchangeEndpointsCopyWith<_ExchangeEndpoints> get copyWith => __$ExchangeEndpointsCopyWithImpl<_ExchangeEndpoints>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$ExchangeEndpointsToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExchangeEndpoints&&(identical(other.targetId, targetId) || other.targetId == targetId)&&const DeepCollectionEquality().equals(other._endpoints, _endpoints)&&(identical(other.certHash, certHash) || other.certHash == certHash));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,targetId,const DeepCollectionEquality().hash(_endpoints),certHash);
 
@@ -746,11 +650,11 @@ as String,
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _EndpointsReceived implements SignalingMessage {
-  const _EndpointsReceived({required this.senderId, required final  List<String> endpoints, required this.certHash, final  String? $type}): _endpoints = endpoints,$type = $type ?? 'EndpointsReceived';
-  factory _EndpointsReceived.fromJson(Map<String, dynamic> json) => _$EndpointsReceivedFromJson(json);
+  const _EndpointsReceived({required this.senderId, required final  List<String> endpoints, required this.certHash}): _endpoints = endpoints;
+  
 
  final  String senderId;
  final  List<String> _endpoints;
@@ -762,27 +666,20 @@ class _EndpointsReceived implements SignalingMessage {
 
  final  String certHash;
 
-@JsonKey(name: 'type')
-final String $type;
-
-
 /// Create a copy of SignalingMessage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 _$EndpointsReceivedCopyWith<_EndpointsReceived> get copyWith => __$EndpointsReceivedCopyWithImpl<_EndpointsReceived>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$EndpointsReceivedToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _EndpointsReceived&&(identical(other.senderId, senderId) || other.senderId == senderId)&&const DeepCollectionEquality().equals(other._endpoints, _endpoints)&&(identical(other.certHash, certHash) || other.certHash == certHash));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,senderId,const DeepCollectionEquality().hash(_endpoints),certHash);
 
@@ -829,30 +726,23 @@ as String,
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _RoomClosed implements SignalingMessage {
-  const _RoomClosed({final  String? $type}): $type = $type ?? 'RoomClosed';
-  factory _RoomClosed.fromJson(Map<String, dynamic> json) => _$RoomClosedFromJson(json);
+  const _RoomClosed();
+  
 
 
 
-@JsonKey(name: 'type')
-final String $type;
 
 
-
-@override
-Map<String, dynamic> toJson() {
-  return _$RoomClosedToJson(this, );
-}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _RoomClosed);
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => runtimeType.hashCode;
 
@@ -868,17 +758,13 @@ String toString() {
 
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _Error implements SignalingMessage {
-  const _Error({required this.message, final  String? $type}): $type = $type ?? 'Error';
-  factory _Error.fromJson(Map<String, dynamic> json) => _$ErrorFromJson(json);
+  const _Error({required this.message});
+  
 
  final  String message;
-
-@JsonKey(name: 'type')
-final String $type;
-
 
 /// Create a copy of SignalingMessage
 /// with the given fields replaced by the non-null parameter values.
@@ -886,17 +772,14 @@ final String $type;
 @pragma('vm:prefer-inline')
 _$ErrorCopyWith<_Error> get copyWith => __$ErrorCopyWithImpl<_Error>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$ErrorToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _Error&&(identical(other.message, message) || other.message == message));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,message);
 

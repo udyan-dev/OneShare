@@ -3,11 +3,11 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  s2n_quic
+  file_selector_linux
+  s2n_quic_flutter
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
-  rust_lib_s2n_quic
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

@@ -4,17 +4,26 @@ publish_to: 'none'
 version: 0.1.0+1
 
 environment:
-  sdk: ^3.11.0
+  sdk: ^3.11.1
 
 dependencies:
+  ffi: ^2.2.0
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
   freezed_annotation: ^3.1.0
   get_it: ^9.2.1
+  image_picker: ^1.2.1
   json_annotation: ^4.11.0
-  s2n_quic:
-    git: git@github.com:udyan-dev/s2n_quic.git
+  mobile_scanner: ^7.2.0
+  path: ^1.9.1
+  path_provider: ^2.1.5
+  pretty_qr_code: ^3.6.0
+  s2n_quic_flutter:
+#    path: ../../s2n_quic_flutter
+    git:
+      url: git@github.com:udyan-dev/s2n_quic_flutter.git
+#      ref: 89e958ab665bf1e892a0b0abc445e820ea657789
   web_socket_channel: ^3.0.3
 
 dev_dependencies:

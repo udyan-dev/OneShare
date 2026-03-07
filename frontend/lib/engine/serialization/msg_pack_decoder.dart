@@ -4,10 +4,7 @@ import 'dart:typed_data';
 class MsgPackDecoder {
   static dynamic decode(Uint8List bytes) {
     final byteData = ByteData.view(
-      bytes.buffer,
-      bytes.offsetInBytes,
-      bytes.lengthInBytes,
-    );
+        bytes.buffer, bytes.offsetInBytes, bytes.lengthInBytes);
     int offset = 0;
 
     dynamic readNext() {
@@ -15,11 +12,12 @@ class MsgPackDecoder {
       final type = byteData.getUint8(offset++);
 
       if (type <= 0x7f) return type;
-      if (type >= 0x80 && type <= 0x8f) return _readMap(type & 0x0f, readNext);
-      if (type >= 0x90 && type <= 0x9f)
+      if (type >= 0x90 && type <= 0x9f) {
         return _readArray(type & 0x0f, readNext);
-      if (type >= 0xa0 && type <= 0xbf)
+      }
+      if (type >= 0xa0 && type <= 0xbf) {
         return _readString(type & 0x1f, bytes, (o) => offset = o, offset);
+      }
       if (type >= 0xe0) return type - 256;
 
       switch (type) {
@@ -89,41 +87,19 @@ class MsgPackDecoder {
           final len = byteData.getUint32(offset);
           offset += 4;
           return _readArray(len, readNext);
-        case 0xde:
-          final len = byteData.getUint16(offset);
-          offset += 2;
-          return _readMap(len, readNext);
-        case 0xdf:
-          final len = byteData.getUint32(offset);
-          offset += 4;
-          return _readMap(len, readNext);
       }
       return null;
     }
 
-    final result = readNext();
-    return result is Map ? Map<String, dynamic>.from(result) : result;
-  }
-
-  static Map _readMap(int length, Function readNext) {
-    final map = {};
-    for (var i = 0; i < length; i++) {
-      final key = readNext();
-      map[key] = readNext();
-    }
-    return map;
+    return readNext();
   }
 
   static List _readArray(int length, Function readNext) {
-    return List.generate(length, (_) => readNext());
+    return List.generate(length, (_) => readNext(), growable: false);
   }
 
-  static String _readString(
-    int length,
-    Uint8List bytes,
-    Function updateOffset,
-    int currentOffset,
-  ) {
+  static String _readString(int length, Uint8List bytes, Function updateOffset,
+      int currentOffset) {
     final end = currentOffset + length;
     final str = utf8.decode(bytes.sublist(currentOffset, end));
     updateOffset(end);

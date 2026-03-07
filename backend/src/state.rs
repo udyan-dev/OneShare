@@ -29,7 +29,7 @@ impl AppState {
             redis_subscriber,
             local_clients: DashMap::new(),
             local_rooms: DashMap::new(),
-            client_to_room: DashMap::new()
+            client_to_room: DashMap::new(),
         })
     }
 }

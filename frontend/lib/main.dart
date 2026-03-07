@@ -4,13 +4,12 @@ import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
 
 import 'core/di.dart' as di;
-import 'src/test.dart';
 
 void main() {
   runZonedGuarded(
-    () {
+    () async {
       WidgetsFlutterBinding.ensureInitialized();
-      di.inject();
+      await di.inject();
       runApp(const MainApp());
     },
     (error, stackTrace) {
@@ -24,6 +23,6 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: SignalingTestPage());
+    return const MaterialApp(home: Scaffold());
   }
 }

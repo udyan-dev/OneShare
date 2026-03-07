@@ -2,9 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'signaling_message.freezed.dart';
 
-part 'signaling_message.g.dart';
-
-@Freezed(unionKey: 'type', unionValueCase: FreezedUnionCase.pascal)
+@freezed
 abstract class SignalingMessage with _$SignalingMessage {
   const factory SignalingMessage.createRoom({
     required String deviceName,
@@ -53,7 +51,4 @@ abstract class SignalingMessage with _$SignalingMessage {
   const factory SignalingMessage.roomClosed() = _RoomClosed;
 
   const factory SignalingMessage.error({required String message}) = _Error;
-
-  factory SignalingMessage.fromJson(Map<String, dynamic> json) =>
-      _$SignalingMessageFromJson(json);
 }

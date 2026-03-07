@@ -2,24 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 class MsgPackEncoder {
-  static Uint8List encode(Map<String, dynamic> message) {
+  static Uint8List encode(List<dynamic> message) {
     final builder = BytesBuilder(copy: false);
-
-    final ordered = <String, dynamic>{};
-    if (message.containsKey('type')) {
-      ordered['type'] = message['type'];
-    }
-    message.forEach((key, value) {
-      if (key != 'type') ordered[key] = value;
-    });
-
-    _writeMapHeader(builder, ordered.length);
-
-    ordered.forEach((key, value) {
-      _writeString(builder, key);
-      _writeValue(builder, value);
-    });
-
+    _writeArray(builder, message);
     return builder.takeBytes();
   }
 
@@ -38,26 +23,6 @@ class MsgPackEncoder {
       builder.addByte(value ? 0xc3 : 0xc2);
     } else if (value == null) {
       builder.addByte(0xc0);
-    } else if (value is Map) {
-      _writeMapHeader(builder, value.length);
-      value.forEach((k, v) {
-        if (k is String) _writeString(builder, k);
-        _writeValue(builder, v);
-      });
-    }
-  }
-
-  static void _writeMapHeader(BytesBuilder builder, int length) {
-    if (length <= 15) {
-      builder.addByte(0x80 | length);
-    } else if (length <= 65535) {
-      builder.addByte(0xde);
-      final bytes = ByteData(2)..setUint16(0, length);
-      builder.add(bytes.buffer.asUint8List());
-    } else {
-      builder.addByte(0xdf);
-      final bytes = ByteData(4)..setUint32(0, length);
-      builder.add(bytes.buffer.asUint8List());
     }
   }
 
