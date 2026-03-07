@@ -5,47 +5,15 @@ use std::fmt;
 
 #[derive(Debug, Clone)]
 pub enum WsMessage {
-    CreateRoom {
-        device_name: String,
-        device_type: String,
-        total_files: i32,
-        total_size: i64,
-    },
-    JoinRoom {
-        share_id: String,
-        device_name: String,
-        device_type: String,
-    },
-    RoomCreated {
-        share_id: String,
-        client_id: String,
-    },
-    RoomInfo {
-        owner_id: String,
-        device_name: String,
-        device_type: String,
-        total_files: i32,
-        total_size: i64,
-    },
-    PeerJoined {
-        peer_id: String,
-        device_name: String,
-        device_type: String,
-    },
-    ExchangeEndpoints {
-        target_id: String,
-        endpoints: Vec<String>,
-        cert_hash: String,
-    },
-    EndpointsReceived {
-        sender_id: String,
-        endpoints: Vec<String>,
-        cert_hash: String,
-    },
+    CreateRoom { device_name: String, device_type: String, total_files: i32, total_size: i64 },
+    JoinRoom { share_id: String, device_name: String, device_type: String },
+    RoomCreated { share_id: String, client_id: String },
+    RoomInfo { owner_id: String, device_name: String, device_type: String, total_files: i32, total_size: i64 },
+    PeerJoined { peer_id: String, device_name: String, device_type: String },
+    ExchangeEndpoints { target_id: String, endpoints: Vec<String>, cert_hash: String },
+    EndpointsReceived { sender_id: String, endpoints: Vec<String>, cert_hash: String },
     RoomClosed,
-    Error {
-        message: String,
-    },
+    Error { message: String },
 }
 
 impl Serialize for WsMessage {
@@ -199,22 +167,9 @@ impl<'de> Deserialize<'de> for WsMessage {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum RedisPayload {
-    PeerJoined {
-        room_id: String,
-        peer_id: String,
-        device_name: String,
-        device_type: String,
-    },
-    EndpointsExchanged {
-        room_id: String,
-        sender_id: String,
-        target_id: String,
-        endpoints: Vec<String>,
-        cert_hash: String,
-    },
-    RoomClosed {
-        room_id: String,
-    },
+    PeerJoined { room_id: String, peer_id: String, device_name: String, device_type: String },
+    EndpointsExchanged { room_id: String, sender_id: String, target_id: String, endpoints: Vec<String>, cert_hash: String },
+    RoomClosed { room_id: String },
 }
 
 #[derive(Debug, Deserialize, Serialize)]

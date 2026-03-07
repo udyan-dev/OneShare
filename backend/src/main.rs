@@ -1,14 +1,11 @@
-mod models;
-mod state;
-mod ws;
-
+use axum::extract::ws::Message;
 use axum::{
-    extract::{State, WebSocketUpgrade},
+    extract::{ConnectInfo, State, WebSocketUpgrade},
+    http::HeaderMap,
     response::IntoResponse,
     routing::get,
     Router,
 };
-use axum::extract::ws::Message;
 use bytes::Bytes;
 use dotenvy::dotenv;
 use fred::prelude::*;
@@ -16,23 +13,24 @@ use mimalloc::MiMalloc;
 use models::{RedisPayload, WsMessage};
 use state::AppState;
 use std::env;
+use std::net::SocketAddr;
 use std::sync::Arc;
-use tracing::info;
-use tracing_subscriber::FmtSubscriber;
+
+mod models;
+mod state;
+mod ws;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
-    tracing::subscriber::set_global_default(
-        FmtSubscriber::builder()
-            .with_max_level(tracing::Level::INFO)
-            .finish(),
-    )
-    .unwrap();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing_subscriber::filter::LevelFilter::ERROR)
+        .init();
 
     dotenv().ok();
+
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let app_state = AppState::new(&redis_url).await;
 
@@ -43,14 +41,30 @@ async fn main() {
         .route("/ws", get(ws_handler))
         .with_state(app_state);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    info!("⚡ OneShare Mesh active on 0.0.0.0:3000");
+    let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let addr = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
 }
 
-async fn ws_handler(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| ws::handle_socket(socket, state))
+async fn ws_handler(
+    ws: WebSocketUpgrade,
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+) -> impl IntoResponse {
+    let public_ip = headers
+        .get("x-forwarded-for")
+        .and_then(|val| val.to_str().ok())
+        .and_then(|s| s.split(',').next())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|| addr.ip().to_string());
+
+    ws.on_upgrade(move |socket| ws::handle_socket(socket, state, public_ip))
 }
 
 fn spawn_redis_router(state: Arc<AppState>) {
@@ -90,13 +104,7 @@ fn spawn_redis_router(state: Arc<AppState>) {
                                 }
                             }
                         }
-                        RedisPayload::EndpointsExchanged {
-                            target_id,
-                            sender_id,
-                            endpoints,
-                            cert_hash,
-                            ..
-                        } => {
+                        RedisPayload::EndpointsExchanged { target_id, sender_id, endpoints, cert_hash, .. } => {
                             if let Some(tx) = state.local_clients.get(&target_id) {
                                 if let Ok(bin) = rmp_serde::to_vec(&WsMessage::EndpointsReceived {
                                     sender_id,
@@ -124,4 +132,26 @@ fn spawn_redis_router(state: Arc<AppState>) {
             }
         }
     });
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c().await.expect("failed");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("failed")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
 }
